@@ -11,7 +11,9 @@ const app = express()
 app.use(bodyParser.json())
 
 app.post('/todos', (req, res) => {
-  const todo = new Todo({ text: req.body.text })
+  const todo = new Todo({
+    text: req.body.text
+  })
 
   todo
     .save()
@@ -24,3 +26,5 @@ app.post('/todos', (req, res) => {
 app.listen(3000, () => {
   console.log(`Started on port 3000`)
 })
+
+module.exports = { app }
