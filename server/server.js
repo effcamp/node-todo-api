@@ -1,4 +1,5 @@
 // .\mongod.exe --dbpath C:\code\mongo-data\ --start server
+require('./config/config')
 const _ = require('lodash')
 const express = require('express')
 const bodyParser = require('body-parser')
