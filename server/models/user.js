@@ -1,8 +1,8 @@
-const mongoose = require('mongoose')
-const validator = require('validator')
-const jwt = require('jsonwebtoken')
-const _ = require('lodash')
-const bcrypt = require('bcryptjs')
+const mongoose = require('mongoose');
+const validator = require('validator');
+const jwt = require('jsonwebtoken');
+const _ = require('lodash');
+const bcrypt = require('bcryptjs');
 
 const UserSchema = new mongoose.Schema({
   email: {
@@ -13,7 +13,7 @@ const UserSchema = new mongoose.Schema({
     unique: true,
     validate: {
       validator: value => {
-        return validator.isEmail(value)
+        return validator.isEmail(value);
       },
       message: '{VALUE} is not a valid email'
     }
@@ -35,18 +35,18 @@ const UserSchema = new mongoose.Schema({
       }
     }
   ]
-})
+});
 
 UserSchema.methods.toJSON = function() {
-  let user = this
-  const userObject = user.toObject()
+  let user = this;
+  const userObject = user.toObject();
 
-  return _.pick(userObject, ['_id', 'email'])
-}
+  return _.pick(userObject, ['_id', 'email']);
+};
 
 UserSchema.methods.generateAuthToken = function() {
-  let user = this
-  const access = 'auth'
+  let user = this;
+  const access = 'auth';
   token = jwt
     .sign(
       {
@@ -55,64 +55,74 @@ UserSchema.methods.generateAuthToken = function() {
       },
       'abc123'
     )
-    .toString()
-  user.tokens.push({ access, token })
+    .toString();
+  user.tokens.push({ access, token });
 
   return user.save().then(() => {
-    return token
-  })
-}
+    return token;
+  });
+};
+
+UserSchema.methods.removeToken = function(token) {
+  const user = this;
+
+  return user.update({
+    $pull: {
+      tokens: { token }
+    }
+  });
+};
 
 UserSchema.statics.findByToken = function(token) {
-  let User = this
-  let decoded
+  let User = this;
+  let decoded;
 
   try {
-    decoded = jwt.verify(token, 'abc123')
+    decoded = jwt.verify(token, 'abc123');
   } catch (e) {
-    return Promise.reject()
+    return Promise.reject();
   }
 
   return User.findOne({
     _id: decoded._id,
     'tokens.token': token,
     'tokens.access': 'auth'
-  })
-}
+  });
+};
 UserSchema.statics.findByCredentials = function(email, password) {
-  const User = this
+  const User = this;
 
   return User.findOne({ email }).then(user => {
     if (!user) {
-      return Promise.reject()
+      return Promise.reject();
     }
     return new Promise((resolve, reject) => {
       bcrypt.compare(password, user.password, (err, res) => {
         if (res) {
-          resolve(user)
+          resolve(user);
         } else {
-          reject()
+          reject();
         }
-      })
-    })
-  })
-}
+      });
+    });
+  });
+};
 
 UserSchema.pre('save', function(next) {
-  let user = this
+  let user = this;
 
   if (user.isModified('password')) {
     bcrypt.genSalt(10, (err, salt) => {
       bcrypt.hash(user.password, salt, (err, hash) => {
-        user.password = hash
-        next()
-      })
-    })
+        user.password = hash;
+        next();
+      });
+    });
   } else {
-    next()
+    next();
   }
-})
+});
 
-const User = mongoose.model('User', UserSchema)
+const User = mongoose.model('User', UserSchema);
 
-module.exports = { User }
+module.exports = { User };
